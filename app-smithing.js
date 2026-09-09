@@ -1,0 +1,23 @@
+(()=>{const A=window.NARETH,P=A.P,T=A.T,g=A.g,SMITH_KEY='nareth-preview-smith-v1';
+P.bag.iron=0;P.bag.tools=0;P.lastDarenHelpDay=0;
+try{let s=JSON.parse(localStorage.getItem(SMITH_KEY)||'null');if(s){if(Number.isFinite(s.iron))P.bag.iron=s.iron;if(Number.isFinite(s.tools))P.bag.tools=s.tools;if(Number.isFinite(s.lastHelpDay))P.lastDarenHelpDay=s.lastHelpDay}}catch(_){}
+A.saveSmith=()=>{try{localStorage.setItem(SMITH_KEY,JSON.stringify({iron:P.bag.iron,tools:P.bag.tools,lastHelpDay:P.lastDarenHelpDay}))}catch(_){}};
+A.smithSpot={x:885,y:548};
+A.nearSmithForge=()=>{if(A.scene!=='world')return[null,1e9];return[A.smithSpot,A.ds(P.x,P.y,A.smithSpot.x,A.smithSpot.y)]};
+A.smithHours=()=>{let h=T.min/60;return h>=7&&h<20};
+A.smithActionLabel=()=>!P.sk.smithing?'DEMİRCİLİK':P.bag.iron>=2?'DÖV':'ÖRS';
+A.darenWorking=()=>{let n=A.N.find(q=>q.n==='Daren');return A.scene==='world'&&n&&!n.hidden&&n.a==='Atölyede çalışıyor'};
+A.helpDaren=()=>{let n=A.dlg&&A.dlg.n;if(!n||n.n!=='Daren')return;if(!A.darenWorking()){A.dlg.t='Çıraklık atölyede olur. Sabah 07:00–18:00 arasında gel.';return}if(P.lastDarenHelpDay===T.day){A.dlg.t='Bugünlük yeter. Körüğü yarın yine çekersin.';return}P.lastDarenHelpDay=T.day;P.rel.Daren=(P.rel.Daren||0)+1;P.bag.iron+=1;P.m+=2;A.adv(60);A.saveSmith();A.save();A.dlg=null;let need=A.M.Daren[2];A.toast=`Daren’e yardım ettin • +2 sikke • +1 ham demir • Güven ${P.rel.Daren}/${need}`;A.toastT=performance.now()+3000};
+A.buyIron=()=>{let n=A.dlg&&A.dlg.n;if(!n||n.n!=='Daren')return;if(!A.darenWorking()){A.dlg.t='Ham demiri handa taşımam. Atölyede konuşalım.';return}if(P.m<3){A.dlg.t='Bir parça ham demir 3 sikke. Paran yetmiyor.';return}P.m-=3;P.bag.iron+=1;A.saveSmith();A.save();A.dlg.t='Daren’den 1 parça ham demir aldın.'};
+A.sellTool=()=>{let n=A.dlg&&A.dlg.n;if(!n||n.n!=='Daren')return;if(!A.darenWorking()){A.dlg.t='Aleti atölyede görmeden para vermem.';return}if(P.bag.tools<1){A.dlg.t='Satacak basit aletin yok.';return}P.bag.tools-=1;P.m+=8;A.saveSmith();A.save();A.dlg.t='Daren yaptığın basit aleti 8 sikkeye aldı.'};
+A.useForge=()=>{if(!P.sk.smithing){A.toast='Önce Daren’den demirciliği öğrenmelisin.';A.toastT=performance.now()+2300;return}if(!A.smithHours()){A.toast='Atölye 07:00–20:00 arasında kullanılabilir.';A.toastT=performance.now()+2300;return}if(P.bag.iron<2){A.toast='Basit alet için 2 parça ham demir gerekiyor.';A.toastT=performance.now()+2400;return}P.bag.iron-=2;P.bag.tools+=1;A.adv(60);A.saveSmith();A.save();A.toast='Örste çalıştın • -2 ham demir • +1 basit alet';A.toastT=performance.now()+2600};
+const baseButtons=A.buttons;
+A.buttons=()=>{let R=baseButtons(),n=A.dlg&&A.dlg.n;if(!n||n.n!=='Daren')return R;let[x,y0,w,h0,B]=R,y=y0-42,h=h0+42,G=7,bw=(w-32-G*2)/3,done=P.lastDarenHelpDay===T.day;B.push(['darenhelp',done?'BUGÜN BİTTİ':'ÇIRAKLIK • +2',x+16,y0+84,bw,33],['ironbuy','DEMİR AL • 3',x+16+bw+G,y0+84,bw,33],['toolsell',`ALET SAT x${P.bag.tools} • +8`,x+16+(bw+G)*2,y0+84,bw,33]);return[x,y,w,h,B]};
+const baseTap=A.tap;
+A.tap=p=>{if(A.dlg&&A.dlg.n.n==='Daren'){let B=A.buttons()[4];for(const b of B){if(p.x>=b[2]&&p.x<=b[2]+b[4]&&p.y>=b[3]&&p.y<=b[3]+b[5]){if(b[0]==='darenhelp'){A.helpDaren();return}if(b[0]==='ironbuy'){A.buyIron();return}if(b[0]==='toolsell'){A.sellTool();return}}}}baseTap(p)};
+const baseInteract=A.interact;
+A.interact=()=>{let[s,d]=A.nearSmithForge();if(s&&d<=76){A.useForge();return}baseInteract()};
+const baseWorld=A.world;
+A.world=()=>{baseWorld();let s=A.smithSpot,near=A.ds(P.x,P.y,s.x,s.y)<=110;g.save();g.translate(-A.cx,-A.cy);g.fillStyle='#3b2c23';g.fillRect(s.x-52,s.y-35,50,56);g.fillStyle='#9b4f32';g.fillRect(s.x-44,s.y-27,34,32);g.fillStyle='#d48143';g.fillRect(s.x-38,s.y-20,22,18);g.fillStyle='#49433d';g.fillRect(s.x+7,s.y-8,52,13);g.beginPath();g.moveTo(s.x+18,s.y+5);g.lineTo(s.x+10,s.y+28);g.lineTo(s.x+44,s.y+28);g.lineTo(s.x+36,s.y+5);g.closePath();g.fill();A.lab('KÖRÜK',s.x-27,s.y+32,9,'#d9bd91');A.lab('ÖRS',s.x+32,s.y+42,9,'#c9c2b7');if(near){g.fillStyle='rgba(224,199,150,.13)';g.beginPath();g.arc(s.x,s.y,62,0,Math.PI*2);g.fill();A.lab(P.sk.smithing?'DEMİRCİ OCAĞI':'DAREN’İN OCAĞI',s.x,s.y-58,10,'#f0d4a0')}g.restore()};
+if(A.farmInteract){const baseFarmInteract=A.farmInteract;A.farmInteract=ref=>{let p=ref&&ref.p;if(!p||!P.sk.farming||P.bag.tools<1)return baseFarmInteract(ref);if(p.s===0){p.s=1;A.adv(15);A.saveFarm();A.save();A.toast='Basit aletle toprağı hazırladın • 15 dk';A.toastT=performance.now()+2100;return}if(p.s===2&&A.absMin&&A.absMin()>=p.ready){p.s=0;p.ready=0;P.bag.grain+=3;A.adv(25);A.saveFarm();A.save();A.toast='Aletle hasat tamamlandı • +3 tahıl • 25 dk';A.toastT=performance.now()+2300;return}baseFarmInteract(ref)}}
+})();
