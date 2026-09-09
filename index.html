@@ -4,6 +4,12 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
 <meta name="theme-color" content="#17140f" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="NARETH" />
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="apple-touch-icon" href="./icon.svg" />
 <title>NARETH Preview</title>
 <style>
   html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#17140f;touch-action:none;overscroll-behavior:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -101,7 +107,7 @@
       label(n.name,n.x,n.y-52,12);label(n.job,n.x,n.y-37,10,'#cbb997');
     }
 
-    ctx.fillStyle='rgba(29,25,21,.4)';ctx.beginPath();ctx.ellipse(player.x,player.y+17,20,8,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(29,25,21,.4)';ctx.beginPath();ctx.ellipse(player.x,player.y+17,20,8,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#2f3431';ctx.fillRect(player.x-14,player.y-20,28,40);
     ctx.fillStyle='#8a4937';ctx.fillRect(player.x-16,player.y-14,32,7);
     ctx.fillStyle='#b58b68';ctx.beginPath();ctx.arc(player.x,player.y-26,12,0,Math.PI*2);ctx.fill();
@@ -165,6 +171,13 @@
 
   requestAnimationFrame(frame);
 })();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
