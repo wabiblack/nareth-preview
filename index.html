@@ -33,41 +33,78 @@
 <canvas id="game"></canvas>
 <script>
 (() => {
-  const blockBrowserGestures = e => e.preventDefault();
-  document.addEventListener('contextmenu', blockBrowserGestures, {capture:true});
-  document.addEventListener('selectstart', blockBrowserGestures, {capture:true});
-  document.addEventListener('dragstart', blockBrowserGestures, {capture:true});
-  document.addEventListener('gesturestart', blockBrowserGestures, {capture:true,passive:false});
-  document.addEventListener('gesturechange', blockBrowserGestures, {capture:true,passive:false});
-  document.addEventListener('gestureend', blockBrowserGestures, {capture:true,passive:false});
+  const blockBrowserGestures=e=>e.preventDefault();
+  document.addEventListener('contextmenu',blockBrowserGestures,{capture:true});
+  document.addEventListener('selectstart',blockBrowserGestures,{capture:true});
+  document.addEventListener('dragstart',blockBrowserGestures,{capture:true});
+  document.addEventListener('gesturestart',blockBrowserGestures,{capture:true,passive:false});
+  document.addEventListener('gesturechange',blockBrowserGestures,{capture:true,passive:false});
+  document.addEventListener('gestureend',blockBrowserGestures,{capture:true,passive:false});
 
-  if ('serviceWorker' in navigator) {
+  if('serviceWorker' in navigator){
     navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});
   }
-  if ('caches' in window) caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});
+  if('caches' in window) caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});
 
-  const canvas = document.getElementById('game');
-  canvas.addEventListener('contextmenu', blockBrowserGestures, {capture:true});
-  canvas.addEventListener('selectstart', blockBrowserGestures, {capture:true});
-  canvas.addEventListener('dragstart', blockBrowserGestures, {capture:true});
+  const canvas=document.getElementById('game');
+  canvas.addEventListener('contextmenu',blockBrowserGestures,{capture:true});
+  canvas.addEventListener('selectstart',blockBrowserGestures,{capture:true});
+  canvas.addEventListener('dragstart',blockBrowserGestures,{capture:true});
 
-  const ctx = canvas.getContext('2d');
-  const DPR = Math.min(devicePixelRatio || 1, 2);
-  const WORLD = {w:1600,h:1000};
-  const player = {x:720,y:515,speed:230};
-  const npcs = [
-    {name:'Daren',job:'Demirci',x:930,y:520,goal:'Atölyeyi aç'},
-    {name:'Mira',job:'Hancı',x:600,y:430,goal:'Hanı işlet'},
-    {name:'Torven',job:'Çiftçi',x:360,y:760,goal:'Hasadı kontrol et'},
-    {name:'Sela',job:'Balıkçı',x:1280,y:780,goal:'Nehirde balık tut'},
-    {name:'Orik',job:'Tüccar',x:760,y:650,goal:'Veyra yolculuğuna hazırlan'}
+  const ctx=canvas.getContext('2d');
+  const DPR=Math.min(devicePixelRatio||1,2);
+  const WORLD={w:1600,h:1000};
+  const player={x:720,y:515,speed:230};
+
+  const npcs=[
+    {
+      name:'Daren',job:'Demirci',x:930,y:520,goal:'Atölyeyi aç',speed:34,
+      zone:{x1:850,y1:500,x2:1040,y2:590},
+      greeting:'Bir şey yaptıracaksan söyle. Boş muhabbet için körüğü söndürmem.',
+      work:'Demircilik yaparım. İstersen zamanla sana da öğretirim ama önce elinin işe yatkın olduğunu görmem lazım.',
+      local:'Karaova küçük yer. Herkes birbirini tanır ama herkes birbirine güvenmez.'
+    },
+    {
+      name:'Mira',job:'Hancı',x:600,y:500,goal:'Hanı işlet',speed:30,
+      zone:{x1:500,y1:485,x2:720,y2:570},
+      greeting:'Hoş geldin. Oda mı arıyorsun, iş mi, yoksa sadece etrafı mı kokluyorsun?',
+      work:'Hanı işletiyorum. Akşamları küçük sahnemiz de olur. Bir şey çalabiliyorsan dinleriz.',
+      local:'Karaova fakir ama yol üstünde. Kül Yolu kapanmadığı sürece burası yaşamaya devam eder.'
+    },
+    {
+      name:'Torven',job:'Çiftçi',x:360,y:760,goal:'Hasadı kontrol et',speed:27,
+      zone:{x1:220,y1:700,x2:570,y2:900},
+      greeting:'Ayağının altına dikkat et. Yeni sürülmüş toprağı ezersen seni de ekerim.',
+      work:'Tarla, hayvan, hasat... İş bitmez. Güçlüysen günlük iş de çıkar sana.',
+      local:'Veyra pazarı iyi fiyat verirse bu sene nefes alırız. Vermezse yine borca yazarız.'
+    },
+    {
+      name:'Sela',job:'Balıkçı',x:1125,y:780,goal:'Nehirde balık tut',speed:26,
+      zone:{x1:1050,y1:650,x2:1160,y2:900},
+      greeting:'Sessiz ol. Balık senden daha sabırlı.',
+      work:'Nehirden ne çıkarsa satarım. İstersen sana olta tutmayı da gösterebilirim.',
+      local:'Nehir sakin görünür ama kuzeye gittikçe işler değişir. Karaova tarafı yine güvenli sayılır.'
+    },
+    {
+      name:'Orik',job:'Tüccar',x:760,y:650,goal:'Veyra yolculuğuna hazırlan',speed:42,
+      zone:{x1:650,y1:555,x2:980,y2:700},
+      greeting:'Alacak mısın, satacak mısın? İkisini de yapmayacaksan bari yolu kapatma.',
+      work:'Karaova ile Veyra arasında mal taşırım. Ucuza alıp pahalıya satmak ayıp değil, meslektir.',
+      local:'Kül Yolu bugün açık. Yarın açık olur mu, onu kimse bilmez.'
+    }
   ];
-  const trees = Array.from({length:34},(_,i)=>({x:70+((i*197)%1460),y:70+((i*313)%850),r:13+(i%8)}))
+
+  for(const n of npcs){
+    n.targetX=n.x;n.targetY=n.y;n.wait=0.4+Math.random()*1.5;n.moving=false;n.facing=1;
+  }
+
+  const trees=Array.from({length:34},(_,i)=>({x:70+((i*197)%1460),y:70+((i*313)%850),r:13+(i%8)}))
     .filter(t=>!(t.x>1120&&t.x<1450)&&!(t.x>120&&t.x<640&&t.y>640));
 
   let viewW=0,viewH=0,rawW=0,rawH=0,portraitFallback=false,camX=0,camY=0,last=performance.now();
   let stick={id:null,dx:0,dy:0};
   let toast='',toastUntil=0;
+  let dialogue=null;
 
   function physicalViewport(){
     const vv=window.visualViewport;
@@ -78,22 +115,15 @@
   }
 
   function resize(){
-    const p=physicalViewport();
-    rawW=p.w; rawH=p.h;
-    portraitFallback=rawH>rawW;
-
+    const p=physicalViewport();rawW=p.w;rawH=p.h;portraitFallback=rawH>rawW;
     if(portraitFallback){
-      viewW=rawH; viewH=rawW;
-      canvas.style.width=viewW+'px';
-      canvas.style.height=viewH+'px';
+      viewW=rawH;viewH=rawW;
+      canvas.style.width=viewW+'px';canvas.style.height=viewH+'px';
       canvas.style.transform='rotate(90deg) translateY(-100%)';
     }else{
-      viewW=rawW; viewH=rawH;
-      canvas.style.width=viewW+'px';
-      canvas.style.height=viewH+'px';
-      canvas.style.transform='none';
+      viewW=rawW;viewH=rawH;
+      canvas.style.width=viewW+'px';canvas.style.height=viewH+'px';canvas.style.transform='none';
     }
-
     canvas.width=Math.max(1,Math.floor(viewW*DPR));
     canvas.height=Math.max(1,Math.floor(viewH*DPR));
     ctx.setTransform(DPR,0,0,DPR,0,0);
@@ -112,7 +142,7 @@
 
   function roundRect(x,y,w,h,r,fill,stroke){
     ctx.beginPath();
-    if(ctx.roundRect) ctx.roundRect(x,y,w,h,r); else ctx.rect(x,y,w,h);
+    if(ctx.roundRect)ctx.roundRect(x,y,w,h,r);else ctx.rect(x,y,w,h);
     if(fill){ctx.fillStyle=fill;ctx.fill();}
     if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}
   }
@@ -123,12 +153,28 @@
     ctx.fillStyle=color;ctx.fillText(text,x,y);
   }
 
+  function wrapText(text,x,y,maxWidth,lineHeight,maxLines=3){
+    const words=text.split(' ');let line='';let lines=[];
+    for(const word of words){
+      const test=line?line+' '+word:word;
+      if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word;}else line=test;
+    }
+    if(line)lines.push(line);
+    lines=lines.slice(0,maxLines);
+    for(let i=0;i<lines.length;i++)ctx.fillText(lines[i],x,y+i*lineHeight);
+  }
+
   function building(x,y,w,h,wall,roof,name){
     ctx.fillStyle='rgba(20,16,13,.35)';ctx.fillRect(x+12,y+18,w,h);
     ctx.fillStyle=wall;ctx.fillRect(x,y,w,h);
     ctx.beginPath();ctx.moveTo(x-18,y+25);ctx.lineTo(x+w/2,y-75);ctx.lineTo(x+w+18,y+25);ctx.closePath();ctx.fillStyle=roof;ctx.fill();
-    ctx.fillStyle='#30241d';ctx.fillRect(x+w/2-24,y+h-62,48,62);
-    label(name,x+w/2,y+h+18,16);
+    ctx.fillStyle='#30241d';ctx.fillRect(x+w/2-24,y+h-62,48,62);label(name,x+w/2,y+h+18,16);
+  }
+
+  function nearestNPC(){
+    let best=null,bestD=Infinity;
+    for(const n of npcs){const d=dist(player.x,player.y,n.x,n.y);if(d<bestD){bestD=d;best=n;}}
+    return {npc:best,d:bestD};
   }
 
   function worldDraw(){
@@ -164,11 +210,15 @@
 
     label('KARAOVA',42,42,30,'#e5d1a7','left');
 
+    const near=nearestNPC();
     for(const n of npcs){
+      const isNear=near.npc===n&&near.d<=145;
+      if(isNear){ctx.fillStyle='rgba(224,199,150,.16)';ctx.beginPath();ctx.arc(n.x,n.y,30,0,Math.PI*2);ctx.fill();}
       ctx.fillStyle='rgba(29,25,21,.35)';ctx.beginPath();ctx.ellipse(n.x,n.y+15,18,7,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#655143';ctx.fillRect(n.x-12,n.y-18,24,36);
+      ctx.fillStyle=n.moving?'#725846':'#655143';ctx.fillRect(n.x-12,n.y-18,24,36);
       ctx.fillStyle='#b48663';ctx.beginPath();ctx.arc(n.x,n.y-25,10,0,Math.PI*2);ctx.fill();
-      label(n.name,n.x,n.y-52,12);label(n.job,n.x,n.y-37,10,'#cbb997');
+      label(n.name,n.x,n.y-52,isNear?14:12,isNear?'#ffe0a9':'#ead9b5');
+      label(n.job,n.x,n.y-37,10,'#cbb997');
     }
 
     ctx.fillStyle='rgba(29,25,21,.4)';ctx.beginPath();ctx.ellipse(player.x,player.y+17,20,8,0,0,Math.PI*2);ctx.fill();
@@ -179,36 +229,99 @@
     ctx.restore();
   }
 
+  function dialogueLayout(){
+    const w=Math.min(600,viewW*0.66);const h=170;const x=(viewW-w)/2;const y=viewH-h-16;
+    const gap=8;const btnY=y+h-48;const btnW=(w-32-gap*2)/3;
+    return {
+      x,y,w,h,
+      buttons:[
+        {id:'work',x:x+16,y:btnY,w:btnW,h:34,text:'İŞİN NE?'},
+        {id:'local',x:x+16+btnW+gap,y:btnY,w:btnW,h:34,text:'KARAOVA?'},
+        {id:'close',x:x+16+(btnW+gap)*2,y:btnY,w:btnW,h:34,text:'GÖRÜŞÜRÜZ'}
+      ]
+    };
+  }
+
+  function drawDialogue(){
+    if(!dialogue)return;
+    const l=dialogueLayout();const n=dialogue.npc;
+    roundRect(l.x,l.y,l.w,l.h,12,'rgba(25,21,18,.97)','#9b7a55');
+    ctx.font='700 18px Georgia,serif';ctx.fillStyle='#f0d7a8';ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText(n.name,l.x+18,l.y+14);
+    ctx.font='12px -apple-system,BlinkMacSystemFont,Segoe UI';ctx.fillStyle='#a99a80';ctx.fillText(n.job,l.x+18,l.y+39);
+    ctx.font='600 14px -apple-system,BlinkMacSystemFont,Segoe UI';ctx.fillStyle='#f0e3cb';
+    wrapText(dialogue.text,l.x+18,l.y+65,l.w-36,19,3);
+    for(const b of l.buttons){
+      roundRect(b.x,b.y,b.w,b.h,8,'rgba(91,70,52,.88)','#b39168');
+      ctx.font='700 11px -apple-system,BlinkMacSystemFont,Segoe UI';ctx.fillStyle='#f4dfba';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(b.text,b.x+b.w/2,b.y+b.h/2+1);
+    }
+  }
+
   function hud(){
     roundRect(16,14,292,88,10,'rgba(28,24,20,.9)','#7f674a');
-    ctx.font='700 24px Georgia,serif';ctx.fillStyle='#e8d3a8';ctx.textAlign='left';ctx.fillText('NARETH',32,45);
+    ctx.font='700 24px Georgia,serif';ctx.fillStyle='#e8d3a8';ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillText('NARETH',32,45);
     ctx.font='14px -apple-system,BlinkMacSystemFont,Segoe UI';ctx.fillStyle='#b9aa8d';ctx.fillText('YS 327  •  Karaova  •  12 sikke',32,72);
 
-    const bx=92,by=viewH-92;
-    ctx.beginPath();ctx.arc(bx,by,61,0,Math.PI*2);ctx.fillStyle='rgba(23,20,17,.5)';ctx.fill();ctx.strokeStyle='rgba(192,167,124,.4)';ctx.lineWidth=3;ctx.stroke();
-    ctx.beginPath();ctx.arc(bx+stick.dx,by+stick.dy,27,0,Math.PI*2);ctx.fillStyle='rgba(192,167,124,.55)';ctx.fill();
+    if(!dialogue){
+      const bx=92,by=viewH-92;
+      ctx.beginPath();ctx.arc(bx,by,61,0,Math.PI*2);ctx.fillStyle='rgba(23,20,17,.5)';ctx.fill();ctx.strokeStyle='rgba(192,167,124,.4)';ctx.lineWidth=3;ctx.stroke();
+      ctx.beginPath();ctx.arc(bx+stick.dx,by+stick.dy,27,0,Math.PI*2);ctx.fillStyle='rgba(192,167,124,.55)';ctx.fill();
 
-    const ax=viewW-90,ay=viewH-92;
-    ctx.beginPath();ctx.arc(ax,ay,47,0,Math.PI*2);ctx.fillStyle='rgba(94,68,50,.9)';ctx.fill();ctx.strokeStyle='#d2b58a';ctx.lineWidth=3;ctx.stroke();
-    ctx.font='700 12px -apple-system,BlinkMacSystemFont,Segoe UI';ctx.textAlign='center';ctx.fillStyle='#f3dfb9';ctx.fillText('ETKİLEŞ',ax,ay+4);
+      const ax=viewW-90,ay=viewH-92;const near=nearestNPC();
+      ctx.beginPath();ctx.arc(ax,ay,47,0,Math.PI*2);ctx.fillStyle=near.d<=130?'rgba(117,82,53,.96)':'rgba(94,68,50,.9)';ctx.fill();ctx.strokeStyle=near.d<=130?'#f0c889':'#d2b58a';ctx.lineWidth=3;ctx.stroke();
+      ctx.font='700 12px -apple-system,BlinkMacSystemFont,Segoe UI';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#f3dfb9';ctx.fillText('ETKİLEŞ',ax,ay+4);
+    }
 
-    if(performance.now()<toastUntil){
+    if(performance.now()<toastUntil&&!dialogue){
       ctx.font='600 14px -apple-system,BlinkMacSystemFont,Segoe UI';
       const w=Math.min(viewW-40,ctx.measureText(toast).width+34);
       roundRect(viewW/2-w/2,viewH-58,w,38,10,'rgba(36,30,24,.94)','#6f5d49');
-      ctx.fillStyle='#f4e5c5';ctx.textAlign='center';ctx.fillText(toast,viewW/2,viewH-35);
+      ctx.fillStyle='#f4e5c5';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(toast,viewW/2,viewH-35);
+    }
+
+    drawDialogue();
+  }
+
+  function chooseTarget(n){
+    n.targetX=n.zone.x1+Math.random()*(n.zone.x2-n.zone.x1);
+    n.targetY=n.zone.y1+Math.random()*(n.zone.y2-n.zone.y1);
+    n.moving=true;
+  }
+
+  function updateNPCs(dt){
+    for(const n of npcs){
+      if(dialogue&&dialogue.npc===n){n.moving=false;continue;}
+      if(n.wait>0){n.wait-=dt;n.moving=false;continue;}
+      const dx=n.targetX-n.x,dy=n.targetY-n.y;const d=Math.hypot(dx,dy);
+      if(d<4){n.wait=1.2+Math.random()*3.5;n.moving=false;chooseTarget(n);n.moving=false;continue;}
+      n.facing=dx>=0?1:-1;n.moving=true;
+      n.x+=dx/d*n.speed*dt;n.y+=dy/d*n.speed*dt;
     }
   }
 
   function interact(){
-    let best=null,bestD=Infinity;
-    for(const n of npcs){const d=dist(player.x,player.y,n.x,n.y);if(d<bestD){bestD=d;best=n}}
-    toast=bestD<=130?`${best.name}: ${best.goal}`:'Yakında etkileşime girecek kimse yok.';
-    toastUntil=performance.now()+2400;
+    if(dialogue){dialogue=null;return;}
+    const near=nearestNPC();
+    if(near.d<=130){dialogue={npc:near.npc,text:near.npc.greeting};stick.id=null;stick.dx=0;stick.dy=0;}
+    else{toast='Yakında etkileşime girecek kimse yok.';toastUntil=performance.now()+1800;}
+  }
+
+  function handleDialogueTap(p){
+    if(!dialogue)return false;
+    const l=dialogueLayout();
+    for(const b of l.buttons){
+      if(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){
+        if(b.id==='work')dialogue.text=dialogue.npc.work;
+        else if(b.id==='local')dialogue.text=dialogue.npc.local;
+        else dialogue=null;
+        return true;
+      }
+    }
+    return true;
   }
 
   function update(dt){
-    if(stick.dx||stick.dy){
+    updateNPCs(dt);
+    if(!dialogue&&(stick.dx||stick.dy)){
       const len=Math.hypot(stick.dx,stick.dy)||1;
       player.x=clamp(player.x+(stick.dx/len)*player.speed*dt,35,WORLD.w-35);
       player.y=clamp(player.y+(stick.dy/len)*player.speed*dt,35,WORLD.h-35);
@@ -223,23 +336,24 @@
   }
 
   function pointerPos(e){
-    if(portraitFallback){
-      return {x:e.clientY,y:rawW-e.clientX};
-    }
-    return {x:e.clientX,y:e.clientY};
+    if(portraitFallback)return{x:e.clientY,y:rawW-e.clientX};
+    return{x:e.clientX,y:e.clientY};
   }
 
   canvas.addEventListener('pointerdown',e=>{
-    e.preventDefault();
-    const p=pointerPos(e),bx=92,by=viewH-92,ax=viewW-90,ay=viewH-92;
+    e.preventDefault();const p=pointerPos(e);
+    if(dialogue){handleDialogueTap(p);return;}
+    const bx=92,by=viewH-92,ax=viewW-90,ay=viewH-92;
     if(dist(p.x,p.y,ax,ay)<65){interact();return;}
     if(dist(p.x,p.y,bx,by)<90&&stick.id===null){
       stick.id=e.pointerId;try{canvas.setPointerCapture(e.pointerId)}catch(_){}moveStick(p.x,p.y);
     }
   });
+
   canvas.addEventListener('pointermove',e=>{
-    if(e.pointerId===stick.id){e.preventDefault();const p=pointerPos(e);moveStick(p.x,p.y);}
+    if(e.pointerId===stick.id&&!dialogue){e.preventDefault();const p=pointerPos(e);moveStick(p.x,p.y);}
   });
+
   function release(e){if(e.pointerId===stick.id){stick.id=null;stick.dx=0;stick.dy=0}}
   canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);
 
