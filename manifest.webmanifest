@@ -2,7 +2,7 @@
   "name": "NARETH",
   "short_name": "NARETH",
   "description": "NARETH mobil oyun önizlemesi",
-  "start_url": "./",
+  "start_url": "./launcher.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "landscape",
