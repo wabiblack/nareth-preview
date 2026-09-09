@@ -1,0 +1,17 @@
+(()=>{const A=window.NARETH,P=A.P,T=A.T,g=A.g,FARM_KEY='nareth-preview-farm-v1';
+const plots=[{x:270,y:760,s:0,ready:0},{x:390,y:760,s:0,ready:0},{x:510,y:760,s:0,ready:0}];
+A.farmPlots=plots;
+A.absMin=()=>T.day*1440+T.min;
+try{let s=JSON.parse(localStorage.getItem(FARM_KEY)||'null');if(s&&Array.isArray(s.plots))s.plots.slice(0,3).forEach((q,i)=>{if(Number.isFinite(q.s))plots[i].s=q.s;if(Number.isFinite(q.ready))plots[i].ready=q.ready})}catch(_){}
+A.saveFarm=()=>{try{localStorage.setItem(FARM_KEY,JSON.stringify({plots:plots.map(p=>({s:p.s,ready:p.ready}))}))}catch(_){} };
+A.nearFarmPlot=()=>{if(A.scene!=='world')return[null,1e9];let best=null,d=1e9;plots.forEach((p,i)=>{let q=A.ds(P.x,P.y,p.x,p.y);if(q<d){d=q;best={p,i}}});return[best,d]};
+A.farmStatus=p=>p.s===0?'NADAS':p.s===1?'HAZIR':A.absMin()>=p.ready?'HASAT HAZIR':'BÜYÜYOR';
+A.farmActionLabel=p=>{if(!P.sk.farming)return'TARIM';if(p.s===0)return'HAZIRLA';if(p.s===1)return'EK';return A.absMin()>=p.ready?'HASAT':'KONTROL'};
+A.farmInteract=ref=>{let p=ref.p;if(!P.sk.farming){A.toast='Önce Torven’den tarım öğrenmelisin.';A.toastT=performance.now()+2200;return}if(p.s===0){p.s=1;A.adv(30);A.saveFarm();A.save();A.toast='Toprağı hazırladın • 30 dk';A.toastT=performance.now()+2000;return}if(p.s===1){if(P.bag.grain<1){A.toast='Ekim için 1 çuval tahıl gerekiyor.';A.toastT=performance.now()+2200;return}P.bag.grain--;p.s=2;p.ready=A.absMin()+720;A.adv(20);A.saveFarm();A.save();A.toast='Ekim tamamlandı • 1 çuval tohum kullanıldı';A.toastT=performance.now()+2400;return}let left=Math.ceil(p.ready-A.absMin());if(left>0){let h=Math.floor(left/60),m=left%60;A.toast=`Hasada yaklaşık ${h?`${h} sa ${m} dk`:`${m} dk`} var.`;A.toastT=performance.now()+2200;return}let yieldCount=3;p.s=0;p.ready=0;P.bag.grain+=yieldCount;A.adv(45);A.saveFarm();A.save();A.toast=`Hasat tamamlandı • +${yieldCount} tahıl çuvalı`;A.toastT=performance.now()+2400};
+const baseInteract=A.interact;
+A.interact=()=>{let[ref,d]=A.nearFarmPlot();if(ref&&d<=78){A.farmInteract(ref);return}baseInteract()};
+const baseWorld=A.world;
+A.world=()=>{baseWorld();g.save();g.translate(-A.cx,-A.cy);plots.forEach((p,i)=>{let ready=p.s===2&&A.absMin()>=p.ready;g.fillStyle=p.s===0?'rgba(83,63,43,.35)':p.s===1?'rgba(112,82,48,.52)':ready?'rgba(176,151,70,.62)':'rgba(105,126,66,.58)';g.fillRect(p.x-48,p.y-42,96,84);g.strokeStyle='#8e744e';g.lineWidth=3;g.strokeRect(p.x-48,p.y-42,96,84);if(p.s===1){g.strokeStyle='#c1a56d';g.lineWidth=2;for(let y=p.y-30;y<=p.y+30;y+=15){g.beginPath();g.moveTo(p.x-37,y);g.lineTo(p.x+37,y);g.stroke()}}if(p.s===2){g.strokeStyle=ready?'#d7c06f':'#7d9b58';g.lineWidth=3;for(let x=p.x-30;x<=p.x+30;x+=20){g.beginPath();g.moveTo(x,p.y+25);g.lineTo(x,p.y-18);g.stroke();g.beginPath();g.moveTo(x,p.y-8);g.lineTo(x-8,p.y-16);g.moveTo(x,p.y-1);g.lineTo(x+8,p.y-10);g.stroke()}}let near=A.ds(P.x,P.y,p.x,p.y)<=105;if(near){g.fillStyle='rgba(224,199,150,.13)';g.beginPath();g.arc(p.x,p.y,58,0,Math.PI*2);g.fill();A.lab(`PARSEL ${i+1} • ${A.farmStatus(p)}`,p.x,p.y-58,10,'#f0d4a0')}});g.restore()};
+const baseHud=A.hud;
+A.hud=()=>{baseHud();if(A.scene!=='world'||A.dlg)return;let[ref,d]=A.nearFarmPlot();if(!ref||d>78)return;let ax=A.vw-90,ay=A.vh-92,txt=A.farmActionLabel(ref.p),active=P.sk.farming;g.beginPath();g.arc(ax,ay,47,0,Math.PI*2);g.fillStyle=active?'rgba(78,96,54,.97)':'rgba(70,62,52,.95)';g.fill();g.strokeStyle=active?'#b6cb83':'#847768';g.lineWidth=2;g.stroke();A.lab(txt,ax,ay+4,11,active?'#f0dfb6':'#c4b7a4')};
+})();
