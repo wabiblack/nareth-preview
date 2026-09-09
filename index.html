@@ -12,8 +12,30 @@
 <link rel="apple-touch-icon" href="./icon.svg" />
 <title>NARETH Preview</title>
 <style>
-  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#17140f;touch-action:none;overscroll-behavior:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-  canvas{position:fixed;inset:0;display:block;width:100vw;height:100dvh;background:#17140f}
+  html,body{
+    margin:0;width:100%;height:100%;overflow:hidden;background:#17140f;
+    touch-action:none;overscroll-behavior:none;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    -webkit-touch-callout:none;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-user-drag:none;
+  }
+  *,*::before,*::after{
+    -webkit-touch-callout:none!important;
+    -webkit-user-select:none!important;
+    user-select:none!important;
+    -webkit-user-drag:none!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+  canvas{
+    position:fixed;inset:0;display:block;width:100vw;height:100dvh;background:#17140f;
+    touch-action:none;
+    -webkit-touch-callout:none;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-user-drag:none;
+  }
   #rotate{position:fixed;inset:0;display:none;place-items:center;background:#17140f;color:#ead9b5;text-align:center;padding:32px;z-index:10;font-size:20px}
   @media (orientation:portrait){#rotate{display:grid}}
 </style>
@@ -23,6 +45,14 @@
 <div id="rotate">NARETH yatay oynanır.<br>Telefonu yan çevir kanka.</div>
 <script>
 (() => {
+  const blockBrowserGestures = (event) => event.preventDefault();
+  document.addEventListener('contextmenu', blockBrowserGestures, { capture: true });
+  document.addEventListener('selectstart', blockBrowserGestures, { capture: true });
+  document.addEventListener('dragstart', blockBrowserGestures, { capture: true });
+  document.addEventListener('gesturestart', blockBrowserGestures, { capture: true, passive: false });
+  document.addEventListener('gesturechange', blockBrowserGestures, { capture: true, passive: false });
+  document.addEventListener('gestureend', blockBrowserGestures, { capture: true, passive: false });
+
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(() => {});
   }
@@ -31,6 +61,10 @@
   }
 
   const canvas = document.getElementById('game');
+  canvas.addEventListener('contextmenu', blockBrowserGestures, { capture: true });
+  canvas.addEventListener('selectstart', blockBrowserGestures, { capture: true });
+  canvas.addEventListener('dragstart', blockBrowserGestures, { capture: true });
+
   const ctx = canvas.getContext('2d');
   const DPR = Math.min(devicePixelRatio || 1, 2);
   const WORLD = { w: 1600, h: 1000 };
@@ -189,11 +223,12 @@
 
   function pointerPos(e){return {x:e.clientX,y:e.clientY};}
   canvas.addEventListener('pointerdown',e=>{
+    e.preventDefault();
     const p=pointerPos(e), bx=92, by=viewH-92, ax=viewW-90, ay=viewH-92;
     if(dist(p.x,p.y,ax,ay)<65){interact();return;}
     if(dist(p.x,p.y,bx,by)<90&&stick.id===null){stick.id=e.pointerId;try{canvas.setPointerCapture(e.pointerId)}catch(_){}moveStick(p.x,p.y)}
   });
-  canvas.addEventListener('pointermove',e=>{if(e.pointerId===stick.id)moveStick(e.clientX,e.clientY)});
+  canvas.addEventListener('pointermove',e=>{if(e.pointerId===stick.id){e.preventDefault();moveStick(e.clientX,e.clientY)}});
   function release(e){if(e.pointerId===stick.id){stick.id=null;stick.dx=0;stick.dy=0}}
   canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);
   function moveStick(x,y){const bx=92,by=viewH-92;let dx=x-bx,dy=y-by;const len=Math.hypot(dx,dy),m=47;if(len>m){dx=dx/len*m;dy=dy/len*m}stick.dx=dx;stick.dy=dy}
