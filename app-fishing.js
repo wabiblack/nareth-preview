@@ -1,0 +1,21 @@
+(()=>{const A=window.NARETH,P=A.P,T=A.T,g=A.g,FISH_KEY='nareth-preview-fishing-v1';
+P.bag.fish=0;P.lastSelaHelpDay=0;
+try{let s=JSON.parse(localStorage.getItem(FISH_KEY)||'null');if(s){if(Number.isFinite(s.fish))P.bag.fish=s.fish;if(Number.isFinite(s.lastHelpDay))P.lastSelaHelpDay=s.lastHelpDay}}catch(_){}
+A.saveFishing=()=>{try{localStorage.setItem(FISH_KEY,JSON.stringify({fish:P.bag.fish,lastHelpDay:P.lastSelaHelpDay}))}catch(_){}};
+A.fishSpots=[{x:1155,y:690},{x:1155,y:785},{x:1155,y:875}];
+A.nearFishSpot=()=>{if(A.scene!=='world')return[null,1e9];let best=null,d=1e9;A.fishSpots.forEach((s,i)=>{let q=A.ds(P.x,P.y,s.x,s.y);if(q<d){d=q;best={s,i}}});return[best,d]};
+A.fishActionLabel=()=>P.sk.fishing?'OLTA AT':'BALIKÇILIK';
+A.castFish=()=>{if(!P.sk.fishing){A.toast='Önce Sela’dan balıkçılık öğrenmelisin.';A.toastT=performance.now()+2200;return}let h=T.min/60,day=h>=5&&h<20,r=Math.random(),count=r<(day?.12:.06)?2:r<(day?.68:.42)?1:0;A.adv(25);if(count){P.bag.fish+=count;A.saveFishing();A.save();A.toast=count===2?'İyi vuruş • 2 nehir balığı yakaladın':'1 nehir balığı yakaladın';A.toastT=performance.now()+2200}else{A.save();A.toast=day?'Bu sefer boş çektin.':'Gece su sessizdi • boş çektin.';A.toastT=performance.now()+2100}};
+A.helpSela=()=>{let n=A.dlg&&A.dlg.n;if(!n||n.n!=='Sela')return;if(A.scene!=='world'||n.a!=='Balık tutuyor'){A.dlg.t='Ağları nehirde toplarım. Sabah 05:00–16:00 arasında yanıma gel.';return}if(P.lastSelaHelpDay===T.day){A.dlg.t='Bugün yeterince yardım ettin. Yarın yine gel.';return}P.lastSelaHelpDay=T.day;P.rel.Sela+=1;P.m+=2;A.adv(60);A.saveFishing();A.save();A.dlg=null;A.toast=`Sela’ya yardım ettin • +2 sikke • Güven ${P.rel.Sela}/${A.M.Sela[2]}`;A.toastT=performance.now()+2600};
+A.sellFish=()=>{let n=A.dlg&&A.dlg.n;if(!n||n.n!=='Sela')return;if(P.bag.fish<1){A.dlg.t='Satacak balığın yok.';return}P.bag.fish--;P.m+=2;A.saveFishing();A.save();A.dlg.t='Sela balığı 2 sikkeye aldı.'};
+const baseButtons=A.buttons;
+A.buttons=()=>{let R=baseButtons(),n=A.dlg&&A.dlg.n;if(!n||n.n!=='Sela')return R;let[x,y0,w,h0,B]=R,y=y0-42,h=h0+42,G=7,bw=(w-32-G)/2;B.push(['selahelp',P.lastSelaHelpDay===T.day?'BUGÜN YARDIM ETTİN':'AĞLARA YARDIM • +2',x+16,y0+84,bw,33],['fishsell',`BALIK SAT x${P.bag.fish} • +2`,x+16+bw+G,y0+84,bw,33]);return[x,y,w,h,B]};
+const baseTap=A.tap;
+A.tap=p=>{if(A.dlg&&A.dlg.n.n==='Sela'){let B=A.buttons()[4];for(const b of B){if(p.x>=b[2]&&p.x<=b[2]+b[4]&&p.y>=b[3]&&p.y<=b[3]+b[5]){if(b[0]==='selahelp'){A.helpSela();return}if(b[0]==='fishsell'){A.sellFish();return}}}}baseTap(p)};
+const baseInteract=A.interact;
+A.interact=()=>{let[ref,d]=A.nearFishSpot();if(ref&&d<=74){A.castFish();return}baseInteract()};
+const baseWorld=A.world;
+A.world=()=>{baseWorld();g.save();g.translate(-A.cx,-A.cy);A.fishSpots.forEach((s,i)=>{let near=A.ds(P.x,P.y,s.x,s.y)<=105;g.strokeStyle=near?'#d8c18e':'#9fb5b5';g.lineWidth=2;g.beginPath();g.arc(s.x+22,s.y,17,0,Math.PI*2);g.stroke();g.beginPath();g.arc(s.x+22,s.y,29,0,Math.PI*2);g.stroke();g.strokeStyle='#5b4632';g.lineWidth=4;g.beginPath();g.moveTo(s.x-17,s.y+24);g.lineTo(s.x+1,s.y-29);g.stroke();g.strokeStyle='#c9b68d';g.lineWidth=1;g.beginPath();g.moveTo(s.x+1,s.y-29);g.quadraticCurveTo(s.x+28,s.y-20,s.x+22,s.y-2);g.stroke();if(near){g.fillStyle='rgba(224,199,150,.13)';g.beginPath();g.arc(s.x,s.y,56,0,Math.PI*2);g.fill();A.lab(`BALIK NOKTASI ${i+1}`,s.x,s.y-56,10,'#e7d1a8')}});g.restore()};
+const baseHud=A.hud;
+A.hud=()=>{baseHud();let fy=P.room?176:142;A.box(A.vw-218,fy,202,28,'rgba(28,24,20,.9)','#7f674a');A.lab(`Nehir balığı x${P.bag.fish}`,A.vw-117,fy+15,11,'#d8e0cf');if(A.scene!=='world'||A.dlg)return;let[ref,d]=A.nearFishSpot();if(!ref||d>74)return;let ax=A.vw-90,ay=A.vh-92,active=P.sk.fishing;g.beginPath();g.arc(ax,ay,47,0,Math.PI*2);g.fillStyle=active?'rgba(55,84,91,.97)':'rgba(70,62,52,.95)';g.fill();g.strokeStyle=active?'#9dc2c2':'#847768';g.lineWidth=2;g.stroke();A.lab(A.fishActionLabel(),ax,ay+4,11,active?'#e4f0e5':'#c4b7a4')};
+})();
