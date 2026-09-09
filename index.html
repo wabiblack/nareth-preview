@@ -16,117 +16,111 @@
     margin:0;width:100%;height:100%;overflow:hidden;background:#17140f;
     touch-action:none;overscroll-behavior:none;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-    -webkit-touch-callout:none;
-    -webkit-user-select:none;
-    user-select:none;
-    -webkit-user-drag:none;
+    -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none;
   }
   *,*::before,*::after{
-    -webkit-touch-callout:none!important;
-    -webkit-user-select:none!important;
-    user-select:none!important;
-    -webkit-user-drag:none!important;
-    -webkit-tap-highlight-color:transparent!important;
+    -webkit-touch-callout:none!important;-webkit-user-select:none!important;user-select:none!important;
+    -webkit-user-drag:none!important;-webkit-tap-highlight-color:transparent!important;
   }
   canvas{
-    position:fixed;inset:0;display:block;width:100vw;height:100dvh;background:#17140f;
-    touch-action:none;
-    -webkit-touch-callout:none;
-    -webkit-user-select:none;
-    user-select:none;
-    -webkit-user-drag:none;
+    position:fixed;left:0;top:0;display:block;background:#17140f;touch-action:none;
+    -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none;
+    transform-origin:top left;
   }
-  #rotate{position:fixed;inset:0;display:none;place-items:center;background:#17140f;color:#ead9b5;text-align:center;padding:32px;z-index:10;font-size:20px}
-  @media (orientation:portrait){#rotate{display:grid}}
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
-<div id="rotate">NARETH yatay oynanır.<br>Telefonu yan çevir kanka.</div>
 <script>
 (() => {
-  const blockBrowserGestures = (event) => event.preventDefault();
-  document.addEventListener('contextmenu', blockBrowserGestures, { capture: true });
-  document.addEventListener('selectstart', blockBrowserGestures, { capture: true });
-  document.addEventListener('dragstart', blockBrowserGestures, { capture: true });
-  document.addEventListener('gesturestart', blockBrowserGestures, { capture: true, passive: false });
-  document.addEventListener('gesturechange', blockBrowserGestures, { capture: true, passive: false });
-  document.addEventListener('gestureend', blockBrowserGestures, { capture: true, passive: false });
+  const blockBrowserGestures = e => e.preventDefault();
+  document.addEventListener('contextmenu', blockBrowserGestures, {capture:true});
+  document.addEventListener('selectstart', blockBrowserGestures, {capture:true});
+  document.addEventListener('dragstart', blockBrowserGestures, {capture:true});
+  document.addEventListener('gesturestart', blockBrowserGestures, {capture:true,passive:false});
+  document.addEventListener('gesturechange', blockBrowserGestures, {capture:true,passive:false});
+  document.addEventListener('gestureend', blockBrowserGestures, {capture:true,passive:false});
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(() => {});
+    navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});
   }
-  if ('caches' in window) {
-    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
-  }
+  if ('caches' in window) caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});
 
   const canvas = document.getElementById('game');
-  canvas.addEventListener('contextmenu', blockBrowserGestures, { capture: true });
-  canvas.addEventListener('selectstart', blockBrowserGestures, { capture: true });
-  canvas.addEventListener('dragstart', blockBrowserGestures, { capture: true });
+  canvas.addEventListener('contextmenu', blockBrowserGestures, {capture:true});
+  canvas.addEventListener('selectstart', blockBrowserGestures, {capture:true});
+  canvas.addEventListener('dragstart', blockBrowserGestures, {capture:true});
 
   const ctx = canvas.getContext('2d');
   const DPR = Math.min(devicePixelRatio || 1, 2);
-  const WORLD = { w: 1600, h: 1000 };
-  const player = { x: 720, y: 515, speed: 230 };
+  const WORLD = {w:1600,h:1000};
+  const player = {x:720,y:515,speed:230};
   const npcs = [
-    {name:'Daren', job:'Demirci', x:930, y:520, goal:'Atölyeyi aç'},
-    {name:'Mira', job:'Hancı', x:600, y:430, goal:'Hanı işlet'},
-    {name:'Torven', job:'Çiftçi', x:360, y:760, goal:'Hasadı kontrol et'},
-    {name:'Sela', job:'Balıkçı', x:1280, y:780, goal:'Nehirde balık tut'},
-    {name:'Orik', job:'Tüccar', x:760, y:650, goal:'Veyra yolculuğuna hazırlan'}
+    {name:'Daren',job:'Demirci',x:930,y:520,goal:'Atölyeyi aç'},
+    {name:'Mira',job:'Hancı',x:600,y:430,goal:'Hanı işlet'},
+    {name:'Torven',job:'Çiftçi',x:360,y:760,goal:'Hasadı kontrol et'},
+    {name:'Sela',job:'Balıkçı',x:1280,y:780,goal:'Nehirde balık tut'},
+    {name:'Orik',job:'Tüccar',x:760,y:650,goal:'Veyra yolculuğuna hazırlan'}
   ];
-  const trees = Array.from({length:34},(_,i)=>({
-    x:70+((i*197)%1460), y:70+((i*313)%850), r:13+(i%8)
-  })).filter(t=>!(t.x>1120&&t.x<1450)&&!(t.x>120&&t.x<640&&t.y>640));
+  const trees = Array.from({length:34},(_,i)=>({x:70+((i*197)%1460),y:70+((i*313)%850),r:13+(i%8)}))
+    .filter(t=>!(t.x>1120&&t.x<1450)&&!(t.x>120&&t.x<640&&t.y>640));
 
-  let viewW=0, viewH=0, camX=0, camY=0, last=performance.now();
+  let viewW=0,viewH=0,rawW=0,rawH=0,portraitFallback=false,camX=0,camY=0,last=performance.now();
   let stick={id:null,dx:0,dy:0};
-  let toast='', toastUntil=0;
+  let toast='',toastUntil=0;
 
-  function viewportSize(){
-    const vv = window.visualViewport;
-    const w = Math.max(1, Math.round((vv && vv.width) || document.documentElement.clientWidth || innerWidth));
-    const h = Math.max(1, Math.round((vv && vv.height) || document.documentElement.clientHeight || innerHeight));
-    return {w,h};
+  function physicalViewport(){
+    const vv=window.visualViewport;
+    return {
+      w:Math.max(1,Math.round((vv&&vv.width)||document.documentElement.clientWidth||innerWidth)),
+      h:Math.max(1,Math.round((vv&&vv.height)||document.documentElement.clientHeight||innerHeight))
+    };
   }
 
   function resize(){
-    const size=viewportSize();
-    viewW=size.w; viewH=size.h;
-    canvas.style.width=viewW+'px';
-    canvas.style.height=viewH+'px';
+    const p=physicalViewport();
+    rawW=p.w; rawH=p.h;
+    portraitFallback=rawH>rawW;
+
+    if(portraitFallback){
+      viewW=rawH; viewH=rawW;
+      canvas.style.width=viewW+'px';
+      canvas.style.height=viewH+'px';
+      canvas.style.transform='rotate(90deg) translateY(-100%)';
+    }else{
+      viewW=rawW; viewH=rawH;
+      canvas.style.width=viewW+'px';
+      canvas.style.height=viewH+'px';
+      canvas.style.transform='none';
+    }
+
     canvas.width=Math.max(1,Math.floor(viewW*DPR));
     canvas.height=Math.max(1,Math.floor(viewH*DPR));
     ctx.setTransform(DPR,0,0,DPR,0,0);
   }
 
-  function forceResize(){
-    [0,80,220,500,900].forEach(ms=>setTimeout(resize,ms));
-  }
-
+  function forceResize(){[0,60,160,320,650].forEach(ms=>setTimeout(resize,ms));}
   addEventListener('resize',forceResize);
   addEventListener('orientationchange',forceResize);
   addEventListener('pageshow',forceResize);
-  if (window.visualViewport) window.visualViewport.addEventListener('resize',forceResize);
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',forceResize);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)forceResize();});
   resize();
 
-  function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
-  function dist(ax,ay,bx,by){return Math.hypot(ax-bx,ay-by);}
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const dist=(ax,ay,bx,by)=>Math.hypot(ax-bx,ay-by);
 
   function roundRect(x,y,w,h,r,fill,stroke){
     ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(x,y,w,h,r);
-    else { ctx.rect(x,y,w,h); }
+    if(ctx.roundRect) ctx.roundRect(x,y,w,h,r); else ctx.rect(x,y,w,h);
     if(fill){ctx.fillStyle=fill;ctx.fill();}
     if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}
   }
+
   function label(text,x,y,size=14,color='#ead9b5',align='center'){
     ctx.font=`600 ${size}px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif`;
-    ctx.textAlign=align; ctx.textBaseline='middle';
-    ctx.lineWidth=4; ctx.strokeStyle='#241c16'; ctx.strokeText(text,x,y);
-    ctx.fillStyle=color; ctx.fillText(text,x,y);
+    ctx.textAlign=align;ctx.textBaseline='middle';ctx.lineWidth=4;ctx.strokeStyle='#241c16';ctx.strokeText(text,x,y);
+    ctx.fillStyle=color;ctx.fillText(text,x,y);
   }
 
   function building(x,y,w,h,wall,roof,name){
@@ -155,11 +149,18 @@
     building(690,720,210,135,'#80684e','#554332','PAZAR DEPOSU');
     building(100,300,190,125,'#78634d','#4d3e32','EVLER');
 
-    for(let i=0;i<4;i++){const x=660+i*90;ctx.fillStyle='#4e3b2c';ctx.fillRect(x,610,66,38);ctx.beginPath();ctx.moveTo(x-5,610);ctx.lineTo(x+71,610);ctx.lineTo(x+33,580);ctx.closePath();ctx.fillStyle=i%2?'#8b794f':'#9f5f42';ctx.fill()}
+    for(let i=0;i<4;i++){
+      const x=660+i*90;ctx.fillStyle='#4e3b2c';ctx.fillRect(x,610,66,38);
+      ctx.beginPath();ctx.moveTo(x-5,610);ctx.lineTo(x+71,610);ctx.lineTo(x+33,580);ctx.closePath();ctx.fillStyle=i%2?'#8b794f':'#9f5f42';ctx.fill();
+    }
 
-    ctx.fillStyle='#5a4532';ctx.fillRect(1160,500,270,85);for(let x=1170;x<1420;x+=28){ctx.fillStyle='#8a6b49';ctx.fillRect(x,508,20,70)}
+    ctx.fillStyle='#5a4532';ctx.fillRect(1160,500,270,85);
+    for(let x=1170;x<1420;x+=28){ctx.fillStyle='#8a6b49';ctx.fillRect(x,508,20,70)}
 
-    for(const t of trees){ctx.fillStyle='#48563b';ctx.beginPath();ctx.arc(t.x,t.y,t.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#66704a';ctx.beginPath();ctx.arc(t.x-6,t.y-9,t.r*.55,0,Math.PI*2);ctx.fill()}
+    for(const t of trees){
+      ctx.fillStyle='#48563b';ctx.beginPath();ctx.arc(t.x,t.y,t.r,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#66704a';ctx.beginPath();ctx.arc(t.x-6,t.y-9,t.r*.55,0,Math.PI*2);ctx.fill();
+    }
 
     label('KARAOVA',42,42,30,'#e5d1a7','left');
 
@@ -183,11 +184,11 @@
     ctx.font='700 24px Georgia,serif';ctx.fillStyle='#e8d3a8';ctx.textAlign='left';ctx.fillText('NARETH',32,45);
     ctx.font='14px -apple-system,BlinkMacSystemFont,Segoe UI';ctx.fillStyle='#b9aa8d';ctx.fillText('YS 327  •  Karaova  •  12 sikke',32,72);
 
-    const bx=92, by=viewH-92;
+    const bx=92,by=viewH-92;
     ctx.beginPath();ctx.arc(bx,by,61,0,Math.PI*2);ctx.fillStyle='rgba(23,20,17,.5)';ctx.fill();ctx.strokeStyle='rgba(192,167,124,.4)';ctx.lineWidth=3;ctx.stroke();
     ctx.beginPath();ctx.arc(bx+stick.dx,by+stick.dy,27,0,Math.PI*2);ctx.fillStyle='rgba(192,167,124,.55)';ctx.fill();
 
-    const ax=viewW-90, ay=viewH-92;
+    const ax=viewW-90,ay=viewH-92;
     ctx.beginPath();ctx.arc(ax,ay,47,0,Math.PI*2);ctx.fillStyle='rgba(94,68,50,.9)';ctx.fill();ctx.strokeStyle='#d2b58a';ctx.lineWidth=3;ctx.stroke();
     ctx.font='700 12px -apple-system,BlinkMacSystemFont,Segoe UI';ctx.textAlign='center';ctx.fillStyle='#f3dfb9';ctx.fillText('ETKİLEŞ',ax,ay+4);
 
@@ -221,17 +222,31 @@
     update(dt);ctx.clearRect(0,0,viewW,viewH);worldDraw();hud();requestAnimationFrame(frame);
   }
 
-  function pointerPos(e){return {x:e.clientX,y:e.clientY};}
+  function pointerPos(e){
+    if(portraitFallback){
+      return {x:e.clientY,y:rawW-e.clientX};
+    }
+    return {x:e.clientX,y:e.clientY};
+  }
+
   canvas.addEventListener('pointerdown',e=>{
     e.preventDefault();
-    const p=pointerPos(e), bx=92, by=viewH-92, ax=viewW-90, ay=viewH-92;
+    const p=pointerPos(e),bx=92,by=viewH-92,ax=viewW-90,ay=viewH-92;
     if(dist(p.x,p.y,ax,ay)<65){interact();return;}
-    if(dist(p.x,p.y,bx,by)<90&&stick.id===null){stick.id=e.pointerId;try{canvas.setPointerCapture(e.pointerId)}catch(_){}moveStick(p.x,p.y)}
+    if(dist(p.x,p.y,bx,by)<90&&stick.id===null){
+      stick.id=e.pointerId;try{canvas.setPointerCapture(e.pointerId)}catch(_){}moveStick(p.x,p.y);
+    }
   });
-  canvas.addEventListener('pointermove',e=>{if(e.pointerId===stick.id){e.preventDefault();moveStick(e.clientX,e.clientY)}});
+  canvas.addEventListener('pointermove',e=>{
+    if(e.pointerId===stick.id){e.preventDefault();const p=pointerPos(e);moveStick(p.x,p.y);}
+  });
   function release(e){if(e.pointerId===stick.id){stick.id=null;stick.dx=0;stick.dy=0}}
   canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);
-  function moveStick(x,y){const bx=92,by=viewH-92;let dx=x-bx,dy=y-by;const len=Math.hypot(dx,dy),m=47;if(len>m){dx=dx/len*m;dy=dy/len*m}stick.dx=dx;stick.dy=dy}
+
+  function moveStick(x,y){
+    const bx=92,by=viewH-92;let dx=x-bx,dy=y-by;const len=Math.hypot(dx,dy),m=47;
+    if(len>m){dx=dx/len*m;dy=dy/len*m}stick.dx=dx;stick.dy=dy;
+  }
 
   forceResize();
   requestAnimationFrame(frame);
