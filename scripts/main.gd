@@ -47,7 +47,7 @@ func _load_atlas_from_web_chunks() -> ImageTexture:
 			push_error("Eksik atlas parcasi: " + path)
 			return null
 		var txt := FileAccess.get_file_as_string(path)
-		var marker := txt.find("+'")
+		var marker := txt.find("+'");
 		var finish := txt.rfind("'")
 		if marker < 0 or finish <= marker + 2:
 			push_error("Atlas parcasi okunamadi: " + path)
@@ -80,7 +80,7 @@ func _build_background() -> void:
 
 	for gy in range(int(ceil(WORLD_SIZE.y / TILE))):
 		for gx in range(int(ceil(WORLD_SIZE.x / TILE))):
-			var idx := abs(gx * 17 + gy * 29 + gx * gy) % grass_rects.size()
+			var idx: int = absi(gx * 17 + gy * 29 + gx * gy) % grass_rects.size()
 			var tile := _region_sprite(grass_rects[idx], Vector2(gx * TILE + 32, gy * TILE + 32), 1.0)
 			tile.centered = true
 			tile.offset = Vector2.ZERO
@@ -109,7 +109,7 @@ func _build_background() -> void:
 		for gx in range(int(ceil(WORLD_SIZE.x / TILE))):
 			var center := Vector2(gx * TILE + 32, gy * TILE + 32)
 			if _distance_to_road(center) < 52.0:
-				var idx := abs(gx * 11 + gy * 7) % dirt_rects.size()
+				var idx: int = absi(gx * 11 + gy * 7) % dirt_rects.size()
 				var tile := _region_sprite(dirt_rects[idx], center, 1.0)
 				tile.centered = true
 				tile.offset = Vector2.ZERO
