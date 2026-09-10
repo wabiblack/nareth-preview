@@ -53,7 +53,6 @@ func _build_background() -> void:
 	base.color = Color8(70, 94, 57)
 	background_layer.add_child(base)
 
-	# Hafif farkli yesil yamalar. Atlas yerine native Godot zemin kullaniliyor.
 	for i: int in range(42):
 		var patch: Polygon2D = Polygon2D.new()
 		var px: float = float((i * 197 + 83) % 1540) + 30.0
@@ -97,7 +96,6 @@ func _build_karaova() -> void:
 	world_layer.y_sort_enabled = true
 	add_child(world_layer)
 
-	# world-atlas.svg icindeki gercek parca koordinatlari
 	_add_world_sprite("KaraovaHani", Rect2(0, 0, 320, 220), Vector2(570, 430), 1.18)
 	_add_world_sprite("Demirci", Rect2(330, 0, 230, 190), Vector2(1060, 435), 1.10)
 	_add_world_sprite("Ev", Rect2(570, 0, 190, 150), Vector2(245, 420), 1.12)
@@ -129,7 +127,6 @@ func _build_player() -> void:
 	player.name = "Player"
 	player.position = Vector2(650, 550)
 	player.set_script(load("res://scripts/player.gd"))
-	world_layer.add_child(player)
 
 	var shape: CapsuleShape2D = CapsuleShape2D.new()
 	shape.radius = 9.0
@@ -156,6 +153,9 @@ func _build_player() -> void:
 	camera.limit_bottom = int(WORLD_SIZE.y)
 	camera.enabled = true
 	player.add_child(camera)
+
+	# Player agaca en son ekleniyor. Boylece @onready $Sprite guvenli sekilde bulunuyor.
+	world_layer.add_child(player)
 
 func _build_ui() -> void:
 	var ui: CanvasLayer = CanvasLayer.new()
