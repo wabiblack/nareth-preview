@@ -1,94 +1,136 @@
 extends Node2D
 
 const WORLD_SIZE: Vector2 = Vector2(1600, 900)
-const ATLAS_PATH: String = "res://assets/sprites-v49/world-atlas.svg"
+const TILE: int = 64
+const ATLAS_CHUNK_COUNT: int = 6
 
-var atlas_texture: Texture2D
+var atlas_texture: ImageTexture
 var background_layer: Node2D
 var world_layer: Node2D
 var status_label: Label
 
+var grass_rects: Array[Rect2] = [
+	Rect2(380, 510, 64, 64),
+	Rect2(446, 510, 64, 64),
+	Rect2(512, 510, 64, 64),
+]
+
+var dirt_rects: Array[Rect2] = [
+	Rect2(578, 510, 64, 64),
+	Rect2(644, 510, 64, 64),
+	Rect2(380, 576, 64, 64),
+]
+
 var road_points: PackedVector2Array = PackedVector2Array([
-	Vector2(-80, 560),
-	Vector2(180, 545),
-	Vector2(420, 555),
-	Vector2(650, 590),
-	Vector2(880, 565),
-	Vector2(1100, 540),
-	Vector2(1330, 555),
-	Vector2(1680, 575),
+	Vector2(-80, 545), Vector2(180, 525), Vector2(390, 535), Vector2(610, 570),
+	Vector2(825, 545), Vector2(1035, 520), Vector2(1260, 535), Vector2(1680, 555),
 ])
 
 func _ready() -> void:
 	RenderingServer.set_default_clear_color(Color8(42, 53, 39))
-	_build_background()
+	_build_boot_background()
 	_build_ui()
 	_set_status("Karaova yukleniyor...")
 
-	atlas_texture = load(ATLAS_PATH) as Texture2D
+	atlas_texture = _load_nareth_v50_atlas()
 	if atlas_texture == null:
-		_set_status("Godot atlas dosyasini yukleyemedi")
-		push_error("Atlas yuklenemedi: " + ATLAS_PATH)
+		_set_status("NARETH asset paketi okunamadi • Output paneline bak")
+		push_error("NARETH v50 atlas yuklenemedi")
 		return
 
+	if is_instance_valid(background_layer):
+		background_layer.queue_free()
+
+	_build_background()
 	_build_karaova()
 	_build_player()
-	_set_status("Karaova • Godot sahnesi calisiyor")
-	print("NARETH Karaova ready • SVG atlas loaded")
+	_set_status("Karaova • NARETH v50 assetleri aktif")
+	print("NARETH v50 real atlas ready")
 
-func _build_background() -> void:
+func _load_nareth_v50_atlas() -> ImageTexture:
+	var b64: String = ""
+	for i: int in range(ATLAS_CHUNK_COUNT):
+		var path: String = "res://art50-%02d.js" % i
+		if not FileAccess.file_exists(path):
+			push_error("Eksik NARETH atlas parcasi: " + path)
+			return null
+
+		var txt: String = FileAccess.get_file_as_string(path)
+		var marker: int = txt.find("+'")
+		var finish: int = txt.rfind("'")
+		if marker < 0 or finish <= marker + 2:
+			push_error("Atlas parcasi ayristirilamadi: %s" % path)
+			return null
+
+		var payload: String = txt.substr(marker + 2, finish - (marker + 2))
+		b64 += payload.strip_edges()
+
+	if b64.is_empty():
+		push_error("NARETH atlas base64 verisi bos")
+		return null
+
+	var raw: PackedByteArray = Marshalls.base64_to_raw(b64)
+	var image: Image = Image.new()
+	var err: Error = image.load_png_from_buffer(raw)
+	if err != OK:
+		push_error("NARETH PNG decode hatasi: %s • bytes=%d" % [error_string(err), raw.size()])
+		return null
+
+	print("NARETH atlas decoded: %dx%d" % [image.get_width(), image.get_height()])
+	return ImageTexture.create_from_image(image)
+
+func _build_boot_background() -> void:
 	background_layer = Node2D.new()
-	background_layer.name = "Terrain"
+	background_layer.name = "BootBackground"
 	background_layer.z_index = -100
 	add_child(background_layer)
 
 	var base: Polygon2D = Polygon2D.new()
-	base.name = "Ground"
-	base.polygon = PackedVector2Array([
-		Vector2.ZERO,
-		Vector2(WORLD_SIZE.x, 0),
-		WORLD_SIZE,
-		Vector2(0, WORLD_SIZE.y),
-	])
-	base.color = Color8(70, 94, 57)
+	base.polygon = PackedVector2Array([Vector2.ZERO, Vector2(WORLD_SIZE.x, 0), WORLD_SIZE, Vector2(0, WORLD_SIZE.y)])
+	base.color = Color8(55, 76, 48)
 	background_layer.add_child(base)
 
-	for i: int in range(42):
-		var patch: Polygon2D = Polygon2D.new()
-		var px: float = float((i * 197 + 83) % 1540) + 30.0
-		var py: float = float((i * 113 + 41) % 820) + 35.0
-		var w: float = 36.0 + float((i * 17) % 58)
-		var h: float = 18.0 + float((i * 11) % 32)
-		patch.polygon = PackedVector2Array([
-			Vector2(px - w, py), Vector2(px, py - h),
-			Vector2(px + w, py), Vector2(px, py + h)
-		])
-		patch.color = Color(0.20, 0.30, 0.16, 0.22)
-		background_layer.add_child(patch)
+func _build_background() -> void:
+	background_layer = Node2D.new()
+	background_layer.name = "Terrain"
+	add_child(background_layer)
 
-	var road_edge: Line2D = Line2D.new()
-	road_edge.name = "RoadEdge"
-	road_edge.points = road_points
-	road_edge.width = 104.0
-	road_edge.default_color = Color8(83, 62, 42)
-	road_edge.antialiased = true
-	background_layer.add_child(road_edge)
+	var base: Polygon2D = Polygon2D.new()
+	base.name = "GroundBase"
+	base.polygon = PackedVector2Array([Vector2.ZERO, Vector2(WORLD_SIZE.x, 0), WORLD_SIZE, Vector2(0, WORLD_SIZE.y)])
+	base.color = Color8(66, 91, 54)
+	base.z_index = -40
+	background_layer.add_child(base)
 
-	var road: Line2D = Line2D.new()
-	road.name = "Road"
-	road.points = road_points
-	road.width = 88.0
-	road.default_color = Color8(145, 111, 70)
-	road.antialiased = true
-	background_layer.add_child(road)
+	var rows: int = int(ceil(WORLD_SIZE.y / float(TILE)))
+	var cols: int = int(ceil(WORLD_SIZE.x / float(TILE)))
+	for gy: int in range(rows):
+		for gx: int in range(cols):
+			var grass_idx: int = absi(gx * 17 + gy * 29 + gx * gy) % grass_rects.size()
+			var grass_tile: Sprite2D = _region_sprite(grass_rects[grass_idx], Vector2(gx * TILE + 32, gy * TILE + 32), 1.0)
+			grass_tile.centered = true
+			grass_tile.offset = Vector2.ZERO
+			grass_tile.z_index = -30
+			background_layer.add_child(grass_tile)
 
-	var road_light: Line2D = Line2D.new()
-	road_light.name = "RoadWear"
-	road_light.points = road_points
-	road_light.width = 48.0
-	road_light.default_color = Color(0.67, 0.52, 0.33, 0.38)
-	road_light.antialiased = true
-	background_layer.add_child(road_light)
+	var road_border: Line2D = Line2D.new()
+	road_border.points = road_points
+	road_border.width = 126.0
+	road_border.default_color = Color8(82, 59, 39)
+	road_border.antialiased = false
+	road_border.z_index = -20
+	background_layer.add_child(road_border)
+
+	for gy: int in range(rows):
+		for gx: int in range(cols):
+			var center: Vector2 = Vector2(gx * TILE + 32, gy * TILE + 32)
+			if _distance_to_road(center) < 54.0:
+				var dirt_idx: int = absi(gx * 11 + gy * 7) % dirt_rects.size()
+				var dirt_tile: Sprite2D = _region_sprite(dirt_rects[dirt_idx], center, 1.0)
+				dirt_tile.centered = true
+				dirt_tile.offset = Vector2.ZERO
+				dirt_tile.z_index = -18
+				background_layer.add_child(dirt_tile)
 
 func _build_karaova() -> void:
 	world_layer = Node2D.new()
@@ -96,36 +138,35 @@ func _build_karaova() -> void:
 	world_layer.y_sort_enabled = true
 	add_child(world_layer)
 
-	_add_world_sprite("KaraovaHani", Rect2(0, 0, 320, 220), Vector2(570, 430), 1.18)
-	_add_world_sprite("Demirci", Rect2(330, 0, 230, 190), Vector2(1060, 435), 1.10)
-	_add_world_sprite("Ev", Rect2(570, 0, 190, 150), Vector2(245, 420), 1.12)
-	_add_world_sprite("Pazar", Rect2(770, 0, 230, 140), Vector2(1135, 770), 1.05)
-	_add_world_sprite("Kuyu", Rect2(105, 250, 96, 84), Vector2(765, 690), 1.05)
+	_add_world_sprite("KaraovaHani", Rect2(0, 0, 365, 307), Vector2(565, 405), 1.08)
+	_add_world_sprite("Demirci", Rect2(370, 0, 300, 355), Vector2(1015, 435), 0.88)
+	_add_world_sprite("Ev", Rect2(675, 0, 208, 247), Vector2(225, 375), 0.92)
+	_add_world_sprite("Pazar", Rect2(0, 360, 245, 249), Vector2(1035, 760), 0.88)
+	_add_world_sprite("Kuyu", Rect2(250, 360, 120, 119), Vector2(735, 675), 0.92)
+	_add_world_sprite("AgacSol", Rect2(380, 360, 112, 139), Vector2(120, 680), 1.15)
+	_add_world_sprite("AgacOrta", Rect2(500, 360, 103, 126), Vector2(790, 360), 0.90)
+	_add_world_sprite("AgacSag", Rect2(380, 360, 112, 139), Vector2(1430, 420), 1.10)
+	_add_world_sprite("AgacAlt", Rect2(500, 360, 103, 126), Vector2(1370, 790), 1.05)
+	_add_world_sprite("Varil", Rect2(0, 615, 88, 86), Vector2(390, 455), 0.80)
+	_add_world_sprite("Kasalar", Rect2(92, 615, 120, 86), Vector2(1165, 665), 0.86)
+	_add_world_sprite("Araba", Rect2(216, 615, 150, 93), Vector2(1245, 595), 0.88)
 
-	_add_world_sprite("AgacSol", Rect2(0, 240, 96, 112), Vector2(105, 705), 1.28)
-	_add_world_sprite("AgacOrta", Rect2(0, 240, 96, 112), Vector2(805, 390), 1.10)
-	_add_world_sprite("AgacSag", Rect2(0, 240, 96, 112), Vector2(1450, 470), 1.28)
-	_add_world_sprite("AgacAlt", Rect2(0, 240, 96, 112), Vector2(1390, 815), 1.20)
+	_add_npc("Mira", Rect2(708, 329, 48, 72), Vector2(785, 520), 0.88)
+	_add_npc("Daren", Rect2(708, 404, 48, 72), Vector2(1100, 515), 0.88)
+	_add_npc("Orik", Rect2(708, 477, 48, 72), Vector2(905, 620), 0.92)
+	_add_npc("Varen", Rect2(708, 553, 48, 70), Vector2(455, 525), 0.88)
+	_add_npc("Sela", Rect2(708, 626, 48, 72), Vector2(805, 705), 0.88)
 
-	_add_world_sprite("Varil", Rect2(210, 255, 40, 56), Vector2(390, 485), 1.0)
-	_add_world_sprite("Kasa", Rect2(260, 260, 52, 44), Vector2(1215, 690), 1.0)
-
-	_add_npc("Mira", Rect2(434, 240, 48, 72), Vector2(815, 535), 1.0)
-	_add_npc("Daren", Rect2(382, 240, 48, 72), Vector2(1140, 520), 1.0)
-	_add_npc("Orik", Rect2(590, 240, 48, 72), Vector2(965, 635), 1.0)
-	_add_npc("Varen", Rect2(642, 240, 48, 72), Vector2(455, 535), 1.0)
-	_add_npc("Sela", Rect2(538, 240, 48, 72), Vector2(845, 745), 1.0)
-
-	_add_blocker("InnCollision", Vector2(570, 415), Vector2(330, 44))
-	_add_blocker("SmithCollision", Vector2(1060, 420), Vector2(245, 42))
-	_add_blocker("HomeCollision", Vector2(245, 405), Vector2(195, 34))
-	_add_blocker("MarketCollision", Vector2(1135, 755), Vector2(235, 30))
-	_add_blocker("WellCollision", Vector2(765, 678), Vector2(80, 26))
+	_add_blocker("InnCollision", Vector2(565, 387), Vector2(300, 38))
+	_add_blocker("SmithCollision", Vector2(1015, 417), Vector2(220, 42))
+	_add_blocker("HomeCollision", Vector2(225, 360), Vector2(150, 34))
+	_add_blocker("MarketCollision", Vector2(1035, 744), Vector2(185, 34))
+	_add_blocker("WellCollision", Vector2(735, 665), Vector2(75, 28))
 
 func _build_player() -> void:
 	var player: CharacterBody2D = CharacterBody2D.new()
 	player.name = "Player"
-	player.position = Vector2(650, 550)
+	player.position = Vector2(650, 535)
 	player.set_script(load("res://scripts/player.gd"))
 
 	var shape: CapsuleShape2D = CapsuleShape2D.new()
@@ -133,20 +174,20 @@ func _build_player() -> void:
 	shape.height = 22.0
 	var collision: CollisionShape2D = CollisionShape2D.new()
 	collision.name = "CollisionShape2D"
-	collision.position = Vector2(0, -10)
+	collision.position = Vector2(0, -9)
 	collision.shape = shape
 	player.add_child(collision)
 
-	var sprite: Sprite2D = _region_sprite(Rect2(330, 240, 48, 72), Vector2.ZERO, 1.0)
+	var sprite: Sprite2D = _region_sprite(Rect2(708, 252, 48, 74), Vector2.ZERO, 0.90)
 	sprite.name = "Sprite"
-	sprite.offset = Vector2(0, -36)
+	sprite.offset = Vector2(0, -37)
 	player.add_child(sprite)
 
 	var camera: Camera2D = Camera2D.new()
 	camera.name = "Camera2D"
-	camera.position = Vector2(0, -90)
+	camera.position = Vector2(0, -140)
 	camera.position_smoothing_enabled = true
-	camera.position_smoothing_speed = 8.0
+	camera.position_smoothing_speed = 7.0
 	camera.limit_left = 0
 	camera.limit_top = 0
 	camera.limit_right = int(WORLD_SIZE.x)
@@ -154,7 +195,6 @@ func _build_player() -> void:
 	camera.enabled = true
 	player.add_child(camera)
 
-	# Player agaca en son ekleniyor. Boylece @onready $Sprite guvenli sekilde bulunuyor.
 	world_layer.add_child(player)
 
 func _build_ui() -> void:
@@ -221,8 +261,8 @@ func _add_npc(node_name: String, rect: Rect2, foot: Vector2, scale_value: float)
 	var sprite: Sprite2D = _add_world_sprite(node_name, rect, foot, scale_value)
 	var label: Label = Label.new()
 	label.text = node_name
-	label.position = Vector2(-34, -rect.size.y - 23)
-	label.size = Vector2(68, 20)
+	label.position = Vector2(-30, -rect.size.y * scale_value - 22)
+	label.size = Vector2(60, 20)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 12)
 	label.add_theme_color_override("font_color", Color8(239, 215, 174))
@@ -238,3 +278,17 @@ func _add_blocker(node_name: String, center: Vector2, size: Vector2) -> void:
 	collision.shape = shape
 	body.add_child(collision)
 	world_layer.add_child(body)
+
+func _distance_to_road(point: Vector2) -> float:
+	var best: float = INF
+	for i: int in range(road_points.size() - 1):
+		best = minf(best, _distance_to_segment(point, road_points[i], road_points[i + 1]))
+	return best
+
+func _distance_to_segment(point: Vector2, a: Vector2, b: Vector2) -> float:
+	var ab: Vector2 = b - a
+	var len2: float = ab.length_squared()
+	if len2 <= 0.0001:
+		return point.distance_to(a)
+	var t: float = clampf((point - a).dot(ab) / len2, 0.0, 1.0)
+	return point.distance_to(a + ab * t)
