@@ -40,22 +40,22 @@ func _ready() -> void:
 	print("NARETH native Godot Karaova ready")
 
 func _load_atlas_from_web_chunks() -> ImageTexture:
-	var b64 := ""
+	var b64: String = ""
 	for i in range(6):
-		var path := "res://art50-%02d.js" % i
+		var path: String = "res://art50-%02d.js" % i
 		if not FileAccess.file_exists(path):
 			push_error("Eksik atlas parcasi: " + path)
 			return null
-		var txt := FileAccess.get_file_as_string(path)
-		var marker := txt.find("+'");
-		var finish := txt.rfind("'")
+		var txt: String = FileAccess.get_file_as_string(path)
+		var marker: int = txt.find("+'");
+		var finish: int = txt.rfind("'")
 		if marker < 0 or finish <= marker + 2:
 			push_error("Atlas parcasi okunamadi: " + path)
 			return null
 		b64 += txt.substr(marker + 2, finish - marker - 2)
-	var raw := Marshalls.base64_to_raw(b64)
+	var raw: PackedByteArray = Marshalls.base64_to_raw(b64)
 	var image := Image.new()
-	var err := image.load_png_from_buffer(raw)
+	var err: Error = image.load_png_from_buffer(raw)
 	if err != OK:
 		push_error("PNG decode hatasi: %s" % err)
 		return null
@@ -81,7 +81,7 @@ func _build_background() -> void:
 	for gy in range(int(ceil(WORLD_SIZE.y / TILE))):
 		for gx in range(int(ceil(WORLD_SIZE.x / TILE))):
 			var idx: int = absi(gx * 17 + gy * 29 + gx * gy) % grass_rects.size()
-			var tile := _region_sprite(grass_rects[idx], Vector2(gx * TILE + 32, gy * TILE + 32), 1.0)
+			var tile: Sprite2D = _region_sprite(grass_rects[idx], Vector2(gx * TILE + 32, gy * TILE + 32), 1.0)
 			tile.centered = true
 			tile.offset = Vector2.ZERO
 			tile.z_index = -30
@@ -107,10 +107,10 @@ func _build_background() -> void:
 
 	for gy in range(int(ceil(WORLD_SIZE.y / TILE))):
 		for gx in range(int(ceil(WORLD_SIZE.x / TILE))):
-			var center := Vector2(gx * TILE + 32, gy * TILE + 32)
+			var center: Vector2 = Vector2(gx * TILE + 32, gy * TILE + 32)
 			if _distance_to_road(center) < 52.0:
 				var idx: int = absi(gx * 11 + gy * 7) % dirt_rects.size()
-				var tile := _region_sprite(dirt_rects[idx], center, 1.0)
+				var tile: Sprite2D = _region_sprite(dirt_rects[idx], center, 1.0)
 				tile.centered = true
 				tile.offset = Vector2.ZERO
 				tile.z_index = -18
@@ -165,7 +165,7 @@ func _build_player() -> void:
 	collision.shape = shape
 	player.add_child(collision)
 
-	var sprite := _region_sprite(Rect2(708, 252, 48, 74), Vector2.ZERO, 0.90)
+	var sprite: Sprite2D = _region_sprite(Rect2(708, 252, 48, 74), Vector2.ZERO, 0.90)
 	sprite.name = "Sprite"
 	sprite.offset = Vector2(0, -37)
 	player.add_child(sprite)
@@ -232,14 +232,14 @@ func _region_sprite(rect: Rect2, pos: Vector2, scale_value: float) -> Sprite2D:
 	return sprite
 
 func _add_world_sprite(node_name: String, rect: Rect2, foot: Vector2, scale_value: float) -> Sprite2D:
-	var sprite := _region_sprite(rect, foot, scale_value)
+	var sprite: Sprite2D = _region_sprite(rect, foot, scale_value)
 	sprite.name = node_name
 	sprite.offset = Vector2(0, -rect.size.y / 2.0)
 	world_layer.add_child(sprite)
 	return sprite
 
 func _add_npc(node_name: String, rect: Rect2, foot: Vector2, scale_value: float) -> void:
-	var sprite := _add_world_sprite(node_name, rect, foot, scale_value)
+	var sprite: Sprite2D = _add_world_sprite(node_name, rect, foot, scale_value)
 	var label := Label.new()
 	label.text = node_name
 	label.position = Vector2(-30, -rect.size.y * scale_value - 22)
@@ -261,15 +261,15 @@ func _add_blocker(node_name: String, center: Vector2, size: Vector2) -> void:
 	world_layer.add_child(body)
 
 func _distance_to_road(point: Vector2) -> float:
-	var best := INF
+	var best: float = INF
 	for i in range(road_points.size() - 1):
-		best = min(best, _distance_to_segment(point, road_points[i], road_points[i + 1]))
+		best = minf(best, _distance_to_segment(point, road_points[i], road_points[i + 1]))
 	return best
 
 func _distance_to_segment(point: Vector2, a: Vector2, b: Vector2) -> float:
-	var ab := b - a
-	var len2 := ab.length_squared()
+	var ab: Vector2 = b - a
+	var len2: float = ab.length_squared()
 	if len2 <= 0.0001:
 		return point.distance_to(a)
-	var t := clamp((point - a).dot(ab) / len2, 0.0, 1.0)
+	var t: float = clampf((point - a).dot(ab) / len2, 0.0, 1.0)
 	return point.distance_to(a + ab * t)
