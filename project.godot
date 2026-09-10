@@ -1,0 +1,17 @@
+; Engine configuration file.
+; NARETH Godot port
+config_version=5
+
+[application]
+config/name="NARETH"
+run/main_scene="res://scenes/main.tscn"
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/handheld/orientation=0
+
+[rendering]
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
