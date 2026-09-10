@@ -1,12 +1,13 @@
 (()=>{const A=window.NARETH,P=A.P;
 const blocks=[
-  {n:'han-sol',x1:434,y1:406,x2:566,y2:476},{n:'han-sag',x1:634,y1:406,x2:766,y2:476},{n:'han-arka',x1:566,y1:406,x2:634,y2:438},
-  {n:'demirci-sol',x1:914,y1:442,x2:1018,y2:505},{n:'demirci-sag',x1:1072,y1:442,x2:1176,y2:505},{n:'demirci-arka',x1:1018,y1:442,x2:1072,y2:466},
-  {n:'pazar',x1:890,y1:664,x2:1118,y2:714},
-  {n:'ev-sol',x1:108,y1:392,x2:180,y2:452},{n:'ev-sag',x1:220,y1:392,x2:282,y2:452},{n:'ev-arka',x1:180,y1:392,x2:220,y2:418}
+  {n:'han-sol',x1:434,y1:406,x2:566,y2:478},{n:'han-sag',x1:634,y1:406,x2:766,y2:478},{n:'han-arka',x1:566,y1:406,x2:634,y2:438},
+  {n:'demirci',x1:820,y1:420,x2:1082,y2:500},
+  {n:'pazar',x1:850,y1:690,x2:1070,y2:795},
+  {n:'kuyu',x1:602,y1:660,x2:678,y2:714},
+  {n:'ev-sol',x1:108,y1:390,x2:180,y2:456},{n:'ev-sag',x1:220,y1:390,x2:298,y2:456},{n:'ev-arka',x1:180,y1:390,x2:220,y2:420}
 ];
 const inside=(x,y,r)=>x>r.x1&&x<r.x2&&y>r.y1&&y<r.y2;
-const waterPoint=(x,y)=>x>1182&&x<1418&&!(y>474&&y<596);
+const waterPoint=(x,y)=>x>1182&&x<1418&&!(y>470&&y<598);
 const pointSolid=(x,y)=>blocks.some(r=>inside(x,y,r))||waterPoint(x,y);
 A.solidAt=(x,y)=>pointSolid(x,y);
 A.footBlocked=(x,y)=>[[0,0],[-7,-4],[7,-4],[-7,4],[7,4]].some(p=>pointSolid(x+p[0],y+p[1]));
