@@ -1,0 +1,1 @@
+(()=>{const A=window.NARETH,img=new Image();A.hd40={img,ready:false};img.onload=()=>A.hd40.ready=true;img.onerror=()=>A.hd40.error=true;img.src='./assets/nareth-hd40-small.png?v=40';})();
