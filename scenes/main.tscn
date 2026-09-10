@@ -1,0 +1,76 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/player.gd" id="2_player"]
+
+[sub_resource type="CapsuleShape2D" id="Capsule_player"]
+radius = 12.0
+height = 30.0
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_main")
+
+[node name="Ground" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, 0, 1280, 0, 1280, 720, 0, 720)
+color = Color(0.235, 0.325, 0.18, 1)
+
+[node name="Road" type="Line2D" parent="."]
+points = PackedVector2Array(-40, 470, 190, 450, 420, 462, 650, 505, 890, 490, 1080, 454, 1320, 470)
+width = 112.0
+default_color = Color(0.53, 0.39, 0.25, 1)
+end_cap_mode = 2
+joint_mode = 2
+
+[node name="InnPlaceholder" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(410, 145, 770, 145, 770, 370, 410, 370)
+color = Color(0.27, 0.18, 0.12, 1)
+
+[node name="InnLabel" type="Label" parent="."]
+offset_left = 500.0
+offset_top = 235.0
+offset_right = 690.0
+offset_bottom = 275.0
+theme_override_colors/font_color = Color(0.95, 0.81, 0.56, 1)
+theme_override_font_sizes/font_size = 26
+text = "KARAOVA HANI"
+horizontal_alignment = 1
+
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(640, 500)
+script = ExtResource("2_player")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+shape = SubResource("Capsule_player")
+
+[node name="Body" type="Polygon2D" parent="Player"]
+polygon = PackedVector2Array(-14, -28, 14, -28, 18, 14, 0, 26, -18, 14)
+color = Color(0.14, 0.12, 0.11, 1)
+
+[node name="Scarf" type="Polygon2D" parent="Player"]
+polygon = PackedVector2Array(-16, -18, 16, -18, 12, -10, -12, -10)
+color = Color(0.58, 0.13, 0.1, 1)
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+position = Vector2(0, -40)
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Title" type="Label" parent="UI"]
+offset_left = 28.0
+offset_top = 22.0
+offset_right = 300.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(0.95, 0.84, 0.65, 1)
+theme_override_font_sizes/font_size = 32
+text = "NARETH"
+
+[node name="Status" type="Label" parent="UI"]
+offset_left = 30.0
+offset_top = 68.0
+offset_right = 520.0
+offset_bottom = 108.0
+theme_override_colors/font_color = Color(0.83, 0.77, 0.66, 1)
+theme_override_font_sizes/font_size = 18
+text = "Godot portu • ilk oynanabilir iskelet"
